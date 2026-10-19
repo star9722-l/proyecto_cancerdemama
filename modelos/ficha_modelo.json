@@ -1,0 +1,16 @@
+{
+    "fecha": "2026-10-18 23:25:47",
+    "modelo_ganador": "Regresi\u00f3n Log\u00edstica",
+    "metricas_val": {
+        "modelo": "Regresi\u00f3n Log\u00edstica",
+        "accuracy": 0.9882352941176471,
+        "recall": 0.9811320754716981,
+        "f1": 0.9904761904761905
+    },
+    "metricas_test": {
+        "modelo": "Regresi\u00f3n Log\u00edstica",
+        "accuracy": 0.9883720930232558,
+        "recall": 1.0,
+        "f1": 0.9908256880733946
+    }
+}

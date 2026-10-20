@@ -1,76 +1,94 @@
 import requests
 
-# Los 10 datos que elegimos (basados en tu imagen de correlación)
-PREGUNTAS = [
-    ("worst_concave_points", 0.0, 0.3),     # Rango típico: 0 a 0.3
-    ("worst_perimeter", 50.0, 300.0),       # Rango típico: 50 a 300
-    ("mean_concave_points", 0.0, 0.2),      # Rango típico: 0 a 0.2
-    ("worst_radius", 5.0, 40.0),            # Rango típico: 5 a 40
-    ("mean_perimeter", 40.0, 200.0),        # Rango típico: 40 a 200
-    ("worst_concavity", 0.0, 1.5),          # Rango típico: 0 a 1.5
-    ("worst_area", 150.0, 4000.0),          # Rango típico: 150 a 4000
-    ("mean_radius", 5.0, 30.0),             # Rango típico: 5 a 30
-    ("worst_symmetry", 0.1, 0.7),           # Rango típico: 0.1 a 0.7
-    ("worst_fractal_dimension", 0.04, 0.2)  # Rango típico: 0.04 a 0.2
+# Definimos las 10 variables (empezando por las más predictivas) con sus rangos REALES
+VARIABLES = [
+    {"nombre": "worst concave points", "min": 0.0, "max": 0.291},
+    {"nombre": "worst perimeter", "min": 50.41, "max": 251.20},
+    {"nombre": "mean concave points", "min": 0.0, "max": 0.201},
+    {"nombre": "worst radius", "min": 7.93, "max": 36.04},
+    {"nombre": "mean perimeter", "min": 43.79, "max": 188.50},
+    {"nombre": "worst concavity", "min": 0.0, "max": 1.252},
+    {"nombre": "worst area", "min": 185.2, "max": 4254.0},
+    {"nombre": "mean radius", "min": 6.981, "max": 28.11},
+    {"nombre": "worst symmetry", "min": 0.1565, "max": 0.6638},
+    {"nombre": "worst fractal dimension", "min": 0.05504, "max": 0.2075}
 ]
 
 def iniciar_chatbot():
-    print("=====================================================")
-    print("🤖 Hola. Soy tu asistente clínico virtual.")
-    print("Te haré 10 preguntas para evaluar el tumor.")
-    print("Escribe 'salir' en cualquier momento para terminar.")
-    print("=====================================================\n")
+    print("==================================================================")
+    print("🤖 Hola, soy tu asistente clínico virtual para el Cáncer de Mama.")
+    print("Te haré 10 preguntas clave para estimar el riesgo del tumor.")
+    print("Escribe 'salir' en cualquier momento para cancelar.")
+    print("==================================================================\n")
 
-    valores = []
-    
-    for nombre, minimo, maximo in PREGUNTAS:
-        while True:
-            # Si el usuario se equivoca, el bucle 'while' se repite para esta misma pregunta
-            entrada = input(f"👉 Ingrese el {nombre}: ")
+    datos_ingresados = []
+
+    # 1. RECOLECCIÓN DE DATOS PASO A PASO (SLOTS) CON VALIDACIÓN
+    for variable in VARIABLES:
+        nombre = variable["nombre"]
+        minimo = variable["min"]
+        maximo = variable["max"]
+        
+        while True: # Bucle para que insista si el usuario se equivoca
+            entrada = input(f"👉 Ingrese el valor de {nombre}: ")
             
             if entrada.lower() == 'salir':
-                print("🤖 ¡Hasta luego!")
+                print("\n🤖 Consulta cancelada. ¡Hasta luego!")
                 return
-
+            
             try:
                 valor = float(entrada)
                 
-                # AQUÍ ESTÁ LA VALIDACIÓN DE ERRORES QUE PIDE EL INGENIERO
+                # VALIDACIÓN DE OUTLIERS REALES
                 if valor < minimo or valor > maximo:
-                    print(f"⚠️ ERROR: El valor ingresado es anormal. Para {nombre}, el rango clínico aceptado es entre {minimo} y {maximo}.")
-                    print("Volvamos a intentarlo.\n")
-                    continue # Vuelve a preguntar lo mismo
+                    print(f"   ⚠️ ERROR: Dato clínico fuera de rango. Para '{nombre}' el valor real debe estar entre {minimo} y {maximo}.")
+                    print("   Por favor, vuelva a intentarlo.\n")
+                    continue # Vuelve a pedir el mismo dato
                 
-                valores.append(valor)
-                break # Si el dato es correcto, pasa a la siguiente pregunta
+                datos_ingresados.append(valor)
+                break # Si el dato es correcto, pasa a la siguiente variable
                 
             except ValueError:
-                print("⚠️ ERROR: Debes ingresar un número válido (usa punto para decimales).\n")
+                print("   ⚠️ ERROR: Formato inválido. Ingrese un número (use punto para decimales).\n")
 
-    print("\n🔄 Consultando a la API y al modelo de Inteligencia Artificial...")
+    # 2. CONSULTA A LA API
+    print("\n🔄 Analizando los datos con la Inteligencia Artificial...")
     
     try:
-        respuesta = requests.post("http://127.0.0.1:8000/predecir", json={"caracteristicas": valores})
-        datos = respuesta.json()
+        # Hacemos la petición a la API en local
+        respuesta = requests.post(
+            "http://127.0.0.1:8000/predecir", 
+            json={"caracteristicas": datos_ingresados},
+            timeout=5
+        )
         
+        # 3. MANEJO DE RESPUESTAS Y DERIVACIÓN HUMANA
         if respuesta.status_code == 200:
-            print("\n✅ --- RESULTADO DEL ANÁLISIS ---")
-            print(f"🔬 Diagnóstico probable: {datos['prediccion']}")
-            print(f"📊 Probabilidad de benignidad: {datos['probabilidad_benigno'] * 100:.2f}%")
-            print(f"⚠️ {datos['advertencia']}")
-            print("-------------------------------\n")
+            datos = respuesta.json()
             
-            derivar = input("¿Deseas derivar este caso a un especialista humano? (si/no): ")
+            print("\n✅ --- RESULTADO DEL ANÁLISIS CLÍNICO ---")
+            print(f"🔬 Clasificación del modelo: {datos['prediccion'].upper()}")
+            print(f"📊 Probabilidad de benignidad: {datos['probabilidad_benigno'] * 100:.2f}%")
+            print(f"⚠️  Advertencia: {datos['advertencia']}")
+            print("------------------------------------------\n")
+            
+            # Flujo alternativo: Derivación a humano
+            derivar = input("❓ ¿Deseas derivar este caso a un especialista humano? (si/no): ")
             if derivar.lower() == 'si':
-                print("\n🏥 Caso marcado para revisión médica prioritaria.\n")
+                print("\n🏥 Caso marcado para revisión médica prioritaria. Un especialista se contactará.\n")
             else:
-                print("\n🤖 Entendido. Fin de la consulta.\n")
+                print("\n🤖 Entendido. Recuerde que este sistema es una herramienta de apoyo.\n")
                 
         else:
-            print(f"\n⚠️ Error en la API: {datos.get('detail')}\n")
+            # Si la API devuelve error 400 o 500
+            error_msg = respuesta.json().get("detail", "Error desconocido en el servidor")
+            print(f"\n⚠️ Error de validación en la API: {error_msg}\n")
             
     except requests.exceptions.ConnectionError:
-        print("\n⚠️ ERROR CRÍTICO: No se pudo conectar con la API. ¿Ya encendiste el servidor (uvicorn)?\n")
+        print("\n🚨 ERROR CRÍTICO: No se pudo conectar con la API.")
+        print("Asegúrese de haber encendido el servidor con: uvicorn src.api:app --reload\n")
+    except Exception as e:
+        print(f"\n🚨 Ocurrió un error inesperado: {e}\n")
 
 if __name__ == "__main__":
     iniciar_chatbot()

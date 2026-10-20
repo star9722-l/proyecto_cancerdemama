@@ -1,6 +1,6 @@
 import requests
 
-# Definimos las 10 variables (empezando por las más predictivas) con sus rangos REALES
+# Definimos las 10 variables con sus rangos REALES
 VARIABLES = [
     {"nombre": "worst concave points", "min": 0.0, "max": 0.291},
     {"nombre": "worst perimeter", "min": 50.41, "max": 251.20},
@@ -21,6 +21,13 @@ def iniciar_chatbot():
     print("Escribe 'salir' en cualquier momento para cancelar.")
     print("==================================================================\n")
 
+    # --- NUEVA SECCIÓN: MOSTRAR RANGOS AL USUARIO ---
+    print("📋 ANTES DE COMENZAR, TEN EN CUENTA LOS SIGUIENTES RANGOS CLÍNICOS VÁLIDOS:")
+    for v in VARIABLES:
+        print(f"   • {v['nombre'].ljust(25)}: entre {v['min']} y {v['max']}")
+    print("==================================================================\n")
+    # ------------------------------------------------
+
     datos_ingresados = []
 
     # 1. RECOLECCIÓN DE DATOS PASO A PASO (SLOTS) CON VALIDACIÓN
@@ -29,7 +36,7 @@ def iniciar_chatbot():
         minimo = variable["min"]
         maximo = variable["max"]
         
-        while True: # Bucle para que insista si el usuario se equivoca
+        while True: 
             entrada = input(f"👉 Ingrese el valor de {nombre}: ")
             
             if entrada.lower() == 'salir':
@@ -41,12 +48,12 @@ def iniciar_chatbot():
                 
                 # VALIDACIÓN DE OUTLIERS REALES
                 if valor < minimo or valor > maximo:
-                    print(f"   ⚠️ ERROR: Dato clínico fuera de rango. Para '{nombre}' el valor real debe estar entre {minimo} y {maximo}.")
+                    print(f"   ⚠️ ERROR: Dato fuera de rango. Debe estar entre {minimo} y {maximo}.")
                     print("   Por favor, vuelva a intentarlo.\n")
-                    continue # Vuelve a pedir el mismo dato
+                    continue 
                 
                 datos_ingresados.append(valor)
-                break # Si el dato es correcto, pasa a la siguiente variable
+                break 
                 
             except ValueError:
                 print("   ⚠️ ERROR: Formato inválido. Ingrese un número (use punto para decimales).\n")
@@ -55,7 +62,6 @@ def iniciar_chatbot():
     print("\n🔄 Analizando los datos con la Inteligencia Artificial...")
     
     try:
-        # Hacemos la petición a la API en local
         respuesta = requests.post(
             "http://127.0.0.1:8000/predecir", 
             json={"caracteristicas": datos_ingresados},
@@ -72,7 +78,6 @@ def iniciar_chatbot():
             print(f"⚠️  Advertencia: {datos['advertencia']}")
             print("------------------------------------------\n")
             
-            # Flujo alternativo: Derivación a humano
             derivar = input("❓ ¿Deseas derivar este caso a un especialista humano? (si/no): ")
             if derivar.lower() == 'si':
                 print("\n🏥 Caso marcado para revisión médica prioritaria. Un especialista se contactará.\n")
@@ -80,7 +85,6 @@ def iniciar_chatbot():
                 print("\n🤖 Entendido. Recuerde que este sistema es una herramienta de apoyo.\n")
                 
         else:
-            # Si la API devuelve error 400 o 500
             error_msg = respuesta.json().get("detail", "Error desconocido en el servidor")
             print(f"\n⚠️ Error de validación en la API: {error_msg}\n")
             
